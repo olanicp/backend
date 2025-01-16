@@ -40,17 +40,12 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.post('/saveUserInterview', async (req, res)=> {
-  const {
-    emotionsIDs,
-    quadrant,
-    activities,
-    userID
-  } = req.body
+app.post("/saveUserInterview", async (req, res) => {
+  const { emotionsIDs, quadrant, activities, userID } = req.body;
   console.log(emotionsIDs, activities.activities);
   try {
     const { data: interviewData, error } = await supabase
-      .from('user_interview')
+      .from("user_interview")
       .insert([
         {
           user_id: userID,
@@ -60,71 +55,73 @@ app.post('/saveUserInterview', async (req, res)=> {
           sleepingHours: activities.sleepingHours,
           exerciseHours: activities.exerciseHours,
           meals: activities.meals,
-          activities: activities.activities
-        }
+          activities: activities.activities,
+        },
       ]);
 
     if (error) {
-      console.error('Błąd podczas wstawiania danych:', error);
-      return res.status(500).json({ message: 'Nie udało się zapisać danych', error });
+      console.error("Błąd podczas wstawiania danych:", error);
+      return res
+        .status(500)
+        .json({ message: "Nie udało się zapisać danych", error });
     }
 
-    res.status(200).json({ message: 'Dane zostały zapisane pomyślnie' });
+    res.status(200).json({ message: "Dane zostały zapisane pomyślnie" });
   } catch (err) {
-    console.error('Nieoczekiwany błąd:', err);
-    res.status(500).json({ message: 'Wewnętrzny błąd serwera' });
+    console.error("Nieoczekiwany błąd:", err);
+    res.status(500).json({ message: "Wewnętrzny błąd serwera" });
   }
-})
-
-app.get('/emotions', async (req, res) => {
-    const { x, y } = req.query;
-    const newX = parseFloat((x - 8) / 8);
-    const newY = parseFloat((y - 8) / 8);
-  
-    if (newX === undefined || newY === undefined) {
-      return res.status(400).send({ error: 'Brak współrzędnych x i y' });
-    }
-  
-    try {
-      const { data: emotions, error } = await supabase
-        .from('emotions')
-        .select('*')
-        .gte('pleasantness', newX - 0.25) 
-        .lte('pleasantness', newX + 0.25) 
-        .gte('energy', newY - 0.25) 
-        .lte('energy', newY + 0.25); 
-  
-      if (error) {
-        throw error;
-      }
-      console.log(emotions);
-    
-      let quadrant = '';
-      if (newX >= 0 && newY >= 0) quadrant = 'high energy pleasant';
-      else if (newX >= 0 && newY < 0) quadrant = 'low energy pleasant';
-      else if (newX < 0 && newY >= 0) quadrant = 'high energy unpleasant';
-      else quadrant = 'low energy unpleasant';
-  
-      res.send({ emotions, quadrant });
-    } catch (err) {
-      res.status(500).send({ error: err.message });
-    }
 });
 
-app.get('/emotionsByIds', async (req, res) => {
-  const {IDs} = req.query;
-  try{
+app.get("/emotions", async (req, res) => {
+  const { x, y } = req.query;
+  const newX = parseFloat((x - 8) / 8);
+  const newY = parseFloat((y - 8) / 8);
+
+  if (newX === undefined || newY === undefined) {
+    return res.status(400).send({ error: "Brak współrzędnych x i y" });
+  }
+
+  try {
+    const { data: emotions, error } = await supabase
+      .from("emotions")
+      .select("*")
+      .gte("pleasantness", newX - 0.25)
+      .lte("pleasantness", newX + 0.25)
+      .gte("energy", newY - 0.25)
+      .lte("energy", newY + 0.25);
+
+    if (error) {
+      throw error;
+    }
+    console.log(emotions);
+
+    let quadrant = "";
+    if (newX >= 0 && newY >= 0) quadrant = "high energy pleasant";
+    else if (newX >= 0 && newY < 0) quadrant = "low energy pleasant";
+    else if (newX < 0 && newY >= 0) quadrant = "high energy unpleasant";
+    else quadrant = "low energy unpleasant";
+
+    res.send({ emotions, quadrant });
+  } catch (err) {
+    res.status(500).send({ error: err.message });
+  }
+});
+
+app.get("/emotionsByIds", async (req, res) => {
+  const { IDs } = req.query;
+  try {
     const { data: emotionsByIds, error } = await supabase
-      .from('emotions')
-      .select('*')
-      .in('id', IDs);
+      .from("emotions")
+      .select("*")
+      .in("id", IDs);
 
     if (error) {
       throw error;
     }
     console.log(emotionsByIds);
-    res.send({ emotionsByIds});
-  }catch (err) {
+    res.send({ emotionsByIds });
+  } catch (err) {
     res.status(500).send({ error: err.message });
   }
 });
@@ -134,20 +131,20 @@ app.get("/stats", async (req, res) => {
   console.log(userID);
   try {
     const { data: stats, error } = await supabase
-      .from('user_interview')
-      .select('*')
+      .from("user_interview")
+      .select("*")
       .eq("user_id", userID);
 
     if (error) {
       throw error;
     }
     console.log(stats);
-  
+
     res.send({ stats });
   } catch (err) {
     res.status(500).send({ error: err.message });
   }
-})
+});
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -233,6 +230,40 @@ app.post("/login", async (req, res) => {
   }
 });
 
+app.get("/journal-entry", async (req, res) => {
+  const { userID } = req.query;
+  const { data: entry, error } = await supabase
+    .from("journal_entries")
+    .select("*")
+    .eq("user_id", userID)
+    .eq("entry_date", new Date().toISOString().split("T")[0])
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    return res.status(500).json({ error: error.message });
+  }
+  res.status(200).send({ entry });
+});
+
+app.post("/journal-entry", async (req, res) => {
+  const { userID, entry } = req.body;
+  if (!userID || !entry)
+    return res.status(400).json({ error: "userId and entry are required" });
+  const { data, error } = await supabase.from("journal_entries").upsert(
+    {
+      user_id: userID,
+      entry_date: new Date().toISOString().split("T")[0],
+      entry,
+    },
+    { onConflict: ["user_id", "entry_date"] }
+  );
+  console.log(userID, entry);
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  res.status(200).json({ message: "Wpis zapisany pomyślnie", data });
+});
+
 app.listen(PORT, () => {
-  console.log("Server is running on port ${PORT}");
+  console.log(`Server is running on port ${PORT}`);
 });
