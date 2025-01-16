@@ -443,7 +443,7 @@ app.get("/journal-entry", async (req, res) => {
   if (error && error.code !== "PGRST116") {
     return res.status(500).json({ error: error.message });
   }
-  res.status(200).send({ entry });
+  res.status(200).send(entry);
 });
 
 app.post("/journal-entry", async (req, res) => {
