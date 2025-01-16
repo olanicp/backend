@@ -220,6 +220,7 @@ app.post("/login", async (req, res) => {
       message: "User logged in successfully",
       user: {
         userID: userId,
+        email: data.user.email,
         streak: newStreakCount,
         login_days: newLoginDays,
       },
