@@ -230,6 +230,20 @@ app.post("/login", async (req, res) => {
   }
 });
 
+app.post("/logout", async (req, res) => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      return res.status(400).json({ message: "Failed to log out" });
+    }
+    return res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Something went wrong during log out" });
+  }
+});
+
 app.get("/journal-entry", async (req, res) => {
   const { userID } = req.query;
   const { data: entry, error } = await supabase
@@ -257,7 +271,6 @@ app.post("/journal-entry", async (req, res) => {
     },
     { onConflict: ["user_id", "entry_date"] }
   );
-  console.log(userID, entry);
 
   if (error) return res.status(500).json({ error: error.message });
 
