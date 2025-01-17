@@ -130,7 +130,6 @@ app.get("/emotionsByIds", async (req, res) => {
     if (error) {
       throw error;
     }
-    console.log(emotionsByIds);
     res.send({ emotionsByIds });
   } catch (err) {
     res.status(500).send({ error: err.message });
@@ -139,7 +138,6 @@ app.get("/emotionsByIds", async (req, res) => {
 
 app.get("/stats", async (req, res) => {
   const { userID } = req.query;
-  console.log(userID);
   try {
     const { data: stats, error } = await supabase
       .from("user_interview")
@@ -149,7 +147,6 @@ app.get("/stats", async (req, res) => {
     if (error) {
       throw error;
     }
-    console.log(stats);
 
     res.send({ stats });
   } catch (err) {
@@ -341,48 +338,12 @@ app.get("/user/daily-history", async (req, res) => {
       interviewdate: date,
     }
   );
-  console.log(data);
 
   if (error) {
     console.error("Error fetching daily history:", error);
     return res.status(500).json({ error: "Failed to fetch history" });
   }
   res.status(200).send(data);
-});
-
-app.get("/emotionsByIds", async (req, res) => {
-  const { IDs } = req.query;
-  try {
-    const { data: emotionsByIds, error } = await supabase
-      .from("emotions")
-      .select("*")
-      .in("id", IDs);
-
-    if (error) {
-      throw error;
-    }
-    res.send({ emotionsByIds });
-  } catch (err) {
-    res.status(500).send({ error: err.message });
-  }
-});
-
-app.get("/stats", async (req, res) => {
-  const { userID } = req.query;
-  try {
-    const { data: stats, error } = await supabase
-      .from("user_interview")
-      .select("*")
-      .eq("user_id", userID);
-
-    if (error) {
-      throw error;
-    }
-
-    res.send({ stats });
-  } catch (err) {
-    res.status(500).send({ error: err.message });
-  }
 });
 
 app.post("/logout", async (req, res) => {
