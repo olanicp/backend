@@ -51,6 +51,33 @@ app.post("/register", async (req, res) => {
   }
 });
 
+app.post("/delete-account", async (req, res) => {
+  const { userID } = req.body;
+
+  if (!userID) {
+    console.log(userID);
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  try {
+    const { error: authError } = await supabase.rpc("delete_user", {
+      userid: userID,
+    });
+
+    if (authError) {
+      throw authError;
+    }
+    await supabase.auth.signOut();
+
+    return res.status(200).json({ message: "Account deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting account:", error.message);
+    return res
+      .status(500)
+      .json({ error: "An error occurred while deleting the account" });
+  }
+});
+
 app.post("/saveUserInterview", async (req, res) => {
   const { emotionsIDs, quadrant, activities, userID } = req.body;
   console.log(emotionsIDs, activities.activities);
