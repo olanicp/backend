@@ -348,38 +348,19 @@ app.post("/saveUserInterview", async (req, res) => {
   }
 });
 
-app.get("/emotions", async (req, res) => {
-  const { x, y } = req.query;
-  const newX = parseFloat((x - 8) / 8);
-  const newY = parseFloat((y - 8) / 8);
+app.get("/user/entry-days", async (req, res) => {
+  const { userID } = req.query;
 
-  if (newX === undefined || newY === undefined) {
-    return res.status(400).send({ error: "Brak współrzędnych x i y" });
+  const { data, error } = await supabase
+    .from("user_interview_dates")
+    .select("date")
+    .eq("user_id", userID);
+
+  if (error) {
+    console.error("Error fetching interview dates:", error);
+    return res.status(500).json({ error: "Failed to fetch dates" });
   }
-
-  try {
-    const { data: emotions, error } = await supabase
-      .from("emotions")
-      .select("*")
-      .gte("pleasantness", newX - 0.25)
-      .lte("pleasantness", newX + 0.25)
-      .gte("energy", newY - 0.25)
-      .lte("energy", newY + 0.25);
-
-    if (error) {
-      throw error;
-    }
-
-    let quadrant = "";
-    if (newX >= 0 && newY >= 0) quadrant = "high energy pleasant";
-    else if (newX >= 0 && newY < 0) quadrant = "low energy pleasant";
-    else if (newX < 0 && newY >= 0) quadrant = "high energy unpleasant";
-    else quadrant = "low energy unpleasant";
-
-    res.send({ emotions, quadrant });
-  } catch (err) {
-    res.status(500).send({ error: err.message });
-  }
+  res.status(200).send(data);
 });
 
 app.get("/emotionsByIds", async (req, res) => {
