@@ -34,7 +34,7 @@ app.post("/register", async (req, res) => {
       const { error: dataError } = await supabase
         .from("user_data")
         .insert([
-          { id: userId, streak_count: 0, login_days: [], userName: name },
+          { id: userId, streak_count: 0, login_days: [], user_name: name },
         ]);
 
       if (dataError) {
@@ -185,6 +185,39 @@ app.post("/login", async (req, res) => {
         userID: userId,
         email: data.user.email,
         name: userData.user_name,
+      },
+    });
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/enter-as-guest", async (req, res) => {
+  try {
+    const { data, error } = await supabase.auth.signInAnonymously();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    const userId = data.user.id;
+    const { error: dataError } = await supabase
+      .from("user_data")
+      .insert([
+        { id: userId, streak_count: 0, login_days: [], user_name: "guest" },
+      ]);
+
+    if (dataError) {
+      console.error("Error creating user data:", dataError);
+    }
+
+    return res.status(200).json({
+      message: "User logged in successfully",
+      user: {
+        userID: userId,
+        email: data.user.email,
+        name: "guest",
       },
     });
   } catch (err) {
