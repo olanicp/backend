@@ -77,7 +77,6 @@ app.post("/delete-account", async (req, res) => {
   const { userID } = req.body;
 
   if (!userID) {
-    console.log(userID);
     return res.status(400).json({ error: "User ID is required" });
   }
 
@@ -102,7 +101,6 @@ app.post("/delete-account", async (req, res) => {
 
 app.post("/saveUserInterview", async (req, res) => {
   const { emotionsIDs, quadrant, activities, userID } = req.body;
-  console.log(emotionsIDs, activities.activities);
   try {
     const { data: interviewData, error } = await supabase
       .from("user_interview")
@@ -154,7 +152,6 @@ app.get("/emotions", async (req, res) => {
     if (error) {
       throw error;
     }
-    console.log(emotions);
 
     let quadrant = "";
     if (newX >= 0 && newY >= 0) quadrant = "high energy pleasant";
@@ -188,16 +185,59 @@ app.get("/emotionsByIds", async (req, res) => {
 app.get("/stats", async (req, res) => {
   const { userID } = req.query;
   try {
-    const { data: stats, error } = await supabase
+    const { data: stats, error: statsError } = await supabase
       .from("user_interview")
       .select("*")
       .eq("user_id", userID);
 
-    if (error) {
-      throw error;
+    if (statsError) {
+      console.error("Błąd podczas pobierania statystyk:", statsError);
+      return res
+        .status(500)
+        .json({ message: "Nie udało się pobierać statystyk", statsError });
     }
 
-    res.send({ stats });
+    const allEmotionIds = stats.flatMap((stat) => stat.emotion_ids);
+    const emotionCounts = allEmotionIds.reduce((acc, id) => {
+      acc[id] = (acc[id] || 0) + 1;
+      return acc;
+    }, {});
+
+    const topEmotionIds = Object.entries(emotionCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([id]) => parseInt(id));
+
+    const { data: topEmotionsData, error: emotionsError } = await supabase
+      .from("emotions")
+      .select("id, emotion")
+      .in("id", topEmotionIds);
+
+    if (emotionsError) {
+      console.error(
+        "Błąd podczas pobierania najczęsciej zaznaczanych emocji:",
+        emotionsError
+      );
+      return res
+        .status(500)
+        .json({
+          message: "Nie udało się pobrać najczęsciej zaznaczanych emocji",
+          emotionsError,
+        });
+    }
+
+    const emotionQuadrants = topEmotionsData.map((emotion) => {
+      const associatedStat = stats.find((stat) =>
+        stat.emotion_ids.includes(emotion.id)
+      );
+      const quadrant = associatedStat ? associatedStat.quadrant : null;
+      return {
+        ...emotion,
+        quadrants: quadrant,
+      };
+    });
+
+    res.send({ stats, emotionQuadrants });
   } catch (err) {
     res.status(500).send({ error: err.message });
   }
