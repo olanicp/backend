@@ -51,6 +51,28 @@ app.post("/register", async (req, res) => {
   }
 });
 
+app.post("/reset-password", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email jest wymagany" });
+  }
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+    if (error) {
+      console.error("Błąd resetowania hasła:", error.message);
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(200).json({ message: "E-mail resetujący hasło został wysłany" });
+  } catch (err) {
+    console.error("Nieoczekiwany błąd:", err);
+    res.status(500).json({ error: "Wewnętrzny błąd serwera" });
+  }
+});
+
 app.post("/delete-account", async (req, res) => {
   const { userID } = req.body;
 
