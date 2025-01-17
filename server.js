@@ -63,8 +63,8 @@ app.post("/saveUserInterview", async (req, res) => {
           emotion_ids: emotionsIDs,
           date: new Date(),
           quadrant: quadrant,
-          sleepingHours: activities.sleepingHours,
-          exerciseHours: activities.exerciseHours,
+          sleeping_hours: activities.sleepingHours,
+          exercise_hours: activities.exerciseHours,
           meals: activities.meals,
           activities: activities.activities,
         },
@@ -316,38 +316,6 @@ app.post("/updateStreak", async (req, res) => {
   }
 });
 
-app.post("/saveUserInterview", async (req, res) => {
-  const { emotionsIDs, quadrant, activities, userID } = req.body;
-  try {
-    const { data: interviewData, error } = await supabase
-      .from("user_interview")
-      .insert([
-        {
-          user_id: userID,
-          emotion_ids: emotionsIDs,
-          date: new Date(),
-          quadrant: quadrant,
-          sleepingHours: activities.sleepingHours,
-          exerciseHours: activities.exerciseHours,
-          meals: activities.meals,
-          activities: activities.activities,
-        },
-      ]);
-
-    if (error) {
-      console.error("Błąd podczas wstawiania danych:", error);
-      return res
-        .status(500)
-        .json({ message: "Nie udało się zapisać danych", error });
-    }
-
-    res.status(200).json({ message: "Dane zostały zapisane pomyślnie" });
-  } catch (err) {
-    console.error("Nieoczekiwany błąd:", err);
-    res.status(500).json({ message: "Wewnętrzny błąd serwera" });
-  }
-});
-
 app.get("/user/entry-days", async (req, res) => {
   const { userID } = req.query;
 
@@ -359,6 +327,25 @@ app.get("/user/entry-days", async (req, res) => {
   if (error) {
     console.error("Error fetching interview dates:", error);
     return res.status(500).json({ error: "Failed to fetch dates" });
+  }
+  res.status(200).send(data);
+});
+
+app.get("/user/daily-history", async (req, res) => {
+  const { userID, date } = req.query;
+
+  const { data, error } = await supabase.rpc(
+    "fetch_interviews_with_emotions_names",
+    {
+      userid: userID,
+      interviewdate: date,
+    }
+  );
+  console.log(data);
+
+  if (error) {
+    console.error("Error fetching daily history:", error);
+    return res.status(500).json({ error: "Failed to fetch history" });
   }
   res.status(200).send(data);
 });
