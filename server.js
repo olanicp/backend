@@ -321,7 +321,7 @@ app.get("/getStreak", async (req, res) => {
   try {
     const { data: userData, error: userError } = await supabase
       .from("user_data")
-      .select("streak_count, login_days, lastInterviewedAt")
+      .select("streak_count, login_days, last_interviewed_at")
       .eq("id", userID)
       .single();
 
@@ -335,7 +335,7 @@ app.get("/getStreak", async (req, res) => {
       streakData: {
         streak: userData.streak_count,
         loginDays: userData.login_days,
-        interviewedAt: userData.lastInterviewedAt,
+        interviewedAt: userData.last_interviewed_at,
       },
     });
   } catch (err) {
@@ -362,7 +362,7 @@ app.post("/updateStreak", async (req, res) => {
     const currentDayIndex = (now.getDay() + 6) % 7;
 
     const lastSignedAt = new Date(userData.last_sign_in_at);
-    let lastInterviewedAt = new Date(userData.lastInterviewedAt);
+    let lastInterviewedAt = new Date(userData.last_interviewed_at);
     let newStreakCount = userData.streak_count;
     let newLoginDays = [...(userData.login_days || [])];
     const createdAt = new Date(userData.created_at);
@@ -388,16 +388,19 @@ app.post("/updateStreak", async (req, res) => {
     } else {
       const dayDifference = calculateDayDifference(lastInterviewedAt, now);
       if (dayDifference > 1) {
+        console.log("when more than one: ", dayDifference);
         newStreakCount = 1;
         newLoginDays = [currentDayIndex];
         lastInterviewedAt = now;
       } else if (dayDifference === 1) {
+        console.log("when exactly one: ", dayDifference);
         if (!newLoginDays.includes(currentDayIndex)) {
           newStreakCount += 1;
           newLoginDays.push(currentDayIndex);
           lastInterviewedAt = now;
         }
       } else {
+        console.log("when whatever one: ", dayDifference);
         newStreakCount = 1;
         newLoginDays = [currentDayIndex];
         lastInterviewedAt = now;
@@ -412,7 +415,7 @@ app.post("/updateStreak", async (req, res) => {
       .update({
         streak_count: newStreakCount,
         login_days: newLoginDays,
-        lastInterviewedAt: lastInterviewedAt,
+        last_interviewed_at: lastInterviewedAt,
       })
       .eq("id", userID);
 
