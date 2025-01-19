@@ -59,7 +59,9 @@ app.post("/reset-password", async (req, res) => {
   }
 
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "moodie://reset-password",
+    });
 
     if (error) {
       console.error("Błąd resetowania hasła:", error.message);
@@ -218,12 +220,10 @@ app.get("/stats", async (req, res) => {
         "Błąd podczas pobierania najczęsciej zaznaczanych emocji:",
         emotionsError
       );
-      return res
-        .status(500)
-        .json({
-          message: "Nie udało się pobrać najczęsciej zaznaczanych emocji",
-          emotionsError,
-        });
+      return res.status(500).json({
+        message: "Nie udało się pobrać najczęsciej zaznaczanych emocji",
+        emotionsError,
+      });
     }
 
     const emotionQuadrants = topEmotionsData.map((emotion) => {
