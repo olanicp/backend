@@ -397,9 +397,9 @@ app.post("/updateStreak", async (req, res) => {
         if (!newLoginDays.includes(currentDayIndex)) {
           newStreakCount += 1;
           newLoginDays.push(currentDayIndex);
-          lastInterviewedAt = now;
         }
-      } else {
+        lastInterviewedAt = now;
+      } else if (dayDifference < 0) {
         console.log("when whatever one: ", dayDifference);
         newStreakCount = 1;
         newLoginDays = [currentDayIndex];
