@@ -559,6 +559,21 @@ app.get("/journal-entry", async (req, res) => {
   res.status(200).send(entry);
 });
 
+app.get("/journal-entry/date", async (req, res) => {
+  const { userID, date } = req.query;
+  const { data: entry, error } = await supabase
+    .from("journal_entries")
+    .select("*")
+    .eq("user_id", userID)
+    .eq("entry_date", date)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    return res.status(500).json({ error: error.message });
+  }
+  res.status(200).send(entry);
+});
+
 app.post("/journal-entry", async (req, res) => {
   const { userID, entry } = req.body;
   if (!userID || !entry)
