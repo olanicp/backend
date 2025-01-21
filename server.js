@@ -306,7 +306,7 @@ app.post("/change-name", async (req, res) => {
 app.post("/update-email", async (req, res) => {
   const { newEmail, refreshToken } = req.body;
   const authHeader = req.headers.authorization;
-  console.log(refreshToken);
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Couldn't find token" });
   }
@@ -315,29 +315,27 @@ app.post("/update-email", async (req, res) => {
   }
 
   const accessToken = authHeader.split(" ")[1];
-
   try {
-    console.log("what1");
     const { data: sessionData, error: sessionError } =
       await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken,
       });
 
-    console.log(sessionError);
     const { data, error } = await supabase.auth.updateUser({
       email: newEmail,
     });
 
-    console.log("what3");
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({
+        error: "We sent a message to your old email - please check it.",
+      });
     }
 
-    res.status(200).json({ message: "Email został zaktualizowany", data });
+    res.status(200).json({ message: "Email updated successfully", data });
   } catch (err) {
-    console.error("Błąd podczas aktualizacji:", err);
-    res.status(500).json({ error: "Wewnętrzny błąd serwera" });
+    console.error("Unexpected error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
