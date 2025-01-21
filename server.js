@@ -19,17 +19,12 @@ app.post("/register", async (req, res) => {
       password,
     });
 
-    if (userError) {
-      console.error("Error fetching user data:", userError.message);
-      return res.status(400).json({ error: "Could not retrieve user data." });
-    }
-
     if (error) {
       console.error("Error registering user:", error.message);
       return res.status(400).json({ error: error.message });
     }
 
-    if (data) {
+    if (registerData) {
       const userId = registerData.user.id;
       const { error: dataError } = await supabase
         .from("user_data")
@@ -256,6 +251,8 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
     const userId = data.user.id;
+    const accessToken = data.session.access_token;
+    const refreshToken = data.session.refresh_token;
 
     const { data: userData, error: userError } = await supabase
       .from("user_data")
@@ -274,11 +271,73 @@ app.post("/login", async (req, res) => {
         userID: userId,
         email: data.user.email,
         name: userData.user_name,
+        accessToken,
+        refreshToken,
       },
     });
   } catch (err) {
     console.error("Unexpected error:", err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/change-name", async (req, res) => {
+  const { name, userId } = req.body;
+  try {
+    const { data: userData, error: userError } = await supabase
+      .from("user_data")
+      .update({ user_name: name })
+      .eq("id", userId);
+
+    if (userError) {
+      console.error("Error while updating name:", userError.message);
+      return res.status(400).json({ error: userError.message });
+    }
+
+    return res.status(200).json({
+      message: "Name updated successfully",
+    });
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/update-email", async (req, res) => {
+  const { newEmail, refreshToken } = req.body;
+  const authHeader = req.headers.authorization;
+  console.log(refreshToken);
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Couldn't find token" });
+  }
+  if (!refreshToken) {
+    return res.status(401).json({ error: "Couldn't find refresh token" });
+  }
+
+  const accessToken = authHeader.split(" ")[1];
+
+  try {
+    console.log("what1");
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+    console.log(sessionError);
+    const { data, error } = await supabase.auth.updateUser({
+      email: newEmail,
+    });
+
+    console.log("what3");
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(200).json({ message: "Email został zaktualizowany", data });
+  } catch (err) {
+    console.error("Błąd podczas aktualizacji:", err);
+    res.status(500).json({ error: "Wewnętrzny błąd serwera" });
   }
 });
 
