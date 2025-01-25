@@ -70,6 +70,25 @@ app.post("/reset-password", async (req, res) => {
   }
 });
 
+app.post("/user/reset-password", async (req, res) => {
+  const { newPassword } = req.body;
+
+  try {
+    const { data, error } = await supabase.auth.update({
+      password: newPassword,
+    });
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.status(200).json({ message: "Password updated successfully", data });
+  } catch (err) {
+    console.error("Error updating password:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.post("/delete-account", async (req, res) => {
   const { userID } = req.body;
 
