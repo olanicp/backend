@@ -10,6 +10,25 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+app.get("/auth/confirm", async function (req, res) {
+  const token_hash = req.query.token_hash;
+  const type = req.query.type;
+  const next = req.query.next ?? "/";
+
+  if (token_hash && type) {
+    const supabase = createClient({ req, res });
+    const { error } = await supabase.auth.verifyOtp({
+      type,
+      token_hash,
+    });
+    if (!error) {
+      res.redirect(303, `/${next.slice(1)}`);
+    }
+  }
+
+  res.redirect(303, "/auth/auth-code-error");
+});
+
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
