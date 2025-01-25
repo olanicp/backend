@@ -74,7 +74,7 @@ app.post("/user/reset-password", async (req, res) => {
   const { newPassword } = req.body;
 
   try {
-    const { data, error } = await supabase.auth.update({
+    const { data, error } = await supabase.auth.updateUser({
       password: newPassword,
     });
 
