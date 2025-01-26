@@ -9,16 +9,6 @@ app.use(bodyParser.json());
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
-let token_hash;
-
-app.get("/auth/confirm", async function (req, res) {
-  const token_hash = req.query.token_hash;
-  const type = req.query.type;
-  const next = req.query.next ?? "/";
-  console.log("here we are");
-  const deepLink = `moodie://reset-password?token_hash=${token_hash}`;
-  return res.redirect(303, deepLink);
-});
 
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
@@ -81,12 +71,15 @@ app.post("/reset-password", async (req, res) => {
 });
 
 app.post("/user/reset-password", async (req, res) => {
-  const { newPassword } = req.body;
+  const { newPassword, token } = req.body;
 
   try {
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
+    const { data, error } = await supabase.auth.updateUser(
+      {
+        password: newPassword,
+      },
+      { accessToken: token }
+    );
 
     if (error) {
       return res.status(400).json({ error: error.message });
