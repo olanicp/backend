@@ -71,23 +71,39 @@ app.post("/reset-password", async (req, res) => {
 });
 
 app.post("/user/reset-password", async (req, res) => {
-  const { newPassword, token } = req.body;
+  const { newPassword, refreshToken } = req.body;
+
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Couldn't find token" });
+  }
+  if (!refreshToken) {
+    return res.status(401).json({ error: "Couldn't find refresh token" });
+  }
+
+  const accessToken = authHeader.split(" ")[1];
 
   try {
-    const { data, error } = await supabase.auth.updateUser(
-      {
-        password: newPassword,
-      },
-      { accessToken: token }
-    );
+    const { data: sessionData, error: sessionError } =
+      await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({
+        error: "We sent a message to your email - please check it.",
+      });
     }
 
     res.status(200).json({ message: "Password updated successfully", data });
   } catch (err) {
-    console.error("Error updating password:", err);
+    console.error("Unexpected error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
